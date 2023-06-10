@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument('project_file', help='path to the Blender project file (.blend)', type=str)
 parser.add_argument('--max_retry', help='Maximum number of times to retry rendering  (default: %(default)s)',
                     type=int, default=10)
-parser.add_argument('--resume_render_dir',
+parser.add_argument('--resume',
                     help='Resume rendering the project using this directory instead of creating a new one  (Optional)',
                     type=str)
 
@@ -127,7 +127,7 @@ def build_frame_output_dir(project_file_path: str):
 if __name__ == '__main__':
     args = parser.parse_args()
     project_file = args.project_file
-    frame_output_dir = args.resume_render_dir if args.resume_render_dir else build_frame_output_dir(project_file)
+    frame_output_dir = args.resume if args.resume else build_frame_output_dir(project_file)
     start, end = get_scene_frames(project_file)
     managed_cmd = BlenderCmd(
         project_file_path=project_file,
@@ -137,4 +137,4 @@ if __name__ == '__main__':
         animate=True
     )
 
-    run(managed_cmd, max_retries=args.max_retry, resume=bool(args.resume_render_dir))
+    run(managed_cmd, max_retries=args.max_retry, resume=bool(args.resume))
