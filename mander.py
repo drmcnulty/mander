@@ -8,6 +8,7 @@ import time
 RENDER_OUTPUT_BASE_DIR = 'C:\\blender_files\\renders'
 SCRIPT_START_TIMESTAMP = time.strftime('%Y%m%d-%H%M%S')
 # TODO: make platform-agnostic (use os.path more)
+# TODO: instead of waiting on Blender Proc, start async and continuously monitor Blender process. forward kill events
 
 #####################
 # Manager Arguments #
@@ -32,7 +33,6 @@ class BlenderCmd:
 
     @property
     def command_line(self) -> list[str]:
-        # str_props_dict = {k: str(v) for k, v in asdict(self).items()}
         blender_cmd = ["blender", "-b", self.project_file_path]
         blender_cmd += ["--frame-start", self.start_frame]
         blender_cmd += ["--frame-end", self.end_frame]
@@ -111,13 +111,6 @@ def build_frame_output_dir(project_file_path: str):
     name = project_file_path.split("\\")[-1].split(".blend")[0]
     project_render_dir = '_'.join([name, SCRIPT_START_TIMESTAMP])
     return '\\'.join([RENDER_OUTPUT_BASE_DIR, project_render_dir, '\\'])
-
-#
-# def build_blender_command(project_file_path: str, frame_output_path: str) -> list[str]:
-#     blender_cmd_builder = ["blender", "-b", project_file_path,
-#                            "--render-output", frame_output_path,
-#                            "-a"]
-#     return blender_cmd_builder
 
 
 if __name__ == '__main__':
