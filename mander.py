@@ -3,6 +3,9 @@ import os
 import subprocess
 import argparse
 import time
+import logging
+
+logging.basicConfig(format='MANDER:%(levelname)s:%(message)s', level=logging.DEBUG)
 
 
 RENDER_OUTPUT_BASE_DIR = 'C:\\blender_files\\renders'
@@ -56,6 +59,7 @@ def run(blender_cmd: BlenderCmd,
             and blender_cmd.end_frame not in frames_rendered \
             and num_retries < max_retries:
         try:
+            logging.debug(f"Blender Command: {' '.join(blender_cmd.command_line)}")
             completed_proc = subprocess.run(blender_cmd.command_line, check=True, capture_output=True)
             exit_code = completed_proc.returncode
             frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
@@ -91,9 +95,9 @@ def get_scene_frames(project_path) -> (int, int):
         lines = completed_proc.stdout.decode().splitlines()
         for line in lines:
             if line.startswith("start_frame="):
-                start_frame = line.split("start_frame=")[1]
+                start_frame = int(line.split("start_frame=")[1])
             elif line.startswith("end_frame="):
-                end_frame = line.split("end_frame=")[1]
+                end_frame = int(line.split("end_frame=")[1])
 
         if None in [start_frame, end_frame]:
             raise KeyError("Unable to find start/end frames in blender output.")
@@ -125,10 +129,12 @@ if __name__ == '__main__':
     project_file = args.project_file
     frame_output_dir = args.resume_render_dir if args.resume_render_dir else build_frame_output_dir(project_file)
     start, end = get_scene_frames(project_file)
-    managed_cmd = BlenderCmd(project_file_path=project_file,
-                             frame_output_path=frame_output_dir,
-                             start_frame=start,
-                             end_frame=end,
-                             animate=True)
+    managed_cmd = BlenderCmd(
+        project_file_path=project_file,
+        frame_output_path=frame_output_dir if frame_output_dir.endswith('\\') else frame_output_dir + '\\',
+        start_frame=start,
+        end_frame=end,
+        animate=True
+    )
 
     run(managed_cmd, max_retries=args.max_retry, resume=bool(args.resume_render_dir))
