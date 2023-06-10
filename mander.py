@@ -18,9 +18,9 @@ parser = argparse.ArgumentParser(
 parser.add_argument('project_file', help='path to the Blender project file (.blend)', type=str)
 parser.add_argument('--max_retry', help='Maximum number of times to retry rendering  (default: %(default)s)',
                     type=int, default=10)
-# TODO: add this argument in when this tool can resume rendering all missed frames (in any order, skipping around) in OUTPUT_DIR
-# parser.add_argument('--resume_render_dir', help='Resume rendering the project using this directory instead of creating a new one  (Optional)',
-#                     type=str)
+parser.add_argument('--resume_render_dir',
+                    help='Resume rendering the project using this directory instead of creating a new one  (Optional)',
+                    type=str)
 
 
 @dataclass
@@ -33,18 +33,25 @@ class BlenderCmd:
 
     @property
     def command_line(self) -> list[str]:
-        blender_cmd = ["blender", "-b", self.project_file_path]
-        blender_cmd += ["--frame-start", self.start_frame]
-        blender_cmd += ["--frame-end", self.end_frame]
-        blender_cmd += ["--render-output", self.frame_output_path]
+        blender_cmd = ["blender", "-b", str(self.project_file_path)]
+        blender_cmd += ["--frame-start", str(self.start_frame)]
+        blender_cmd += ["--frame-end", str(self.end_frame)]
+        blender_cmd += ["--render-output", str(self.frame_output_path)]
         if self.animate:
             blender_cmd.append("-a")
         return blender_cmd
 
 
 def run(blender_cmd: BlenderCmd,
-        max_retries: int = 10):
-    exit_code, num_retries, frames_rendered = None, 0, []
+        max_retries: int = 10,
+        resume: bool = False):
+    exit_code, num_retries = None, 0
+    if resume:
+        frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
+        blender_cmd.start_frame = max(frames_rendered) + 1
+    else:
+        frames_rendered = []
+
     while exit_code not in [0, 1] \
             and blender_cmd.end_frame not in frames_rendered \
             and num_retries < max_retries:
@@ -116,7 +123,7 @@ def build_frame_output_dir(project_file_path: str):
 if __name__ == '__main__':
     args = parser.parse_args()
     project_file = args.project_file
-    frame_output_dir = build_frame_output_dir(project_file)
+    frame_output_dir = args.resume_render_dir if args.resume_render_dir else build_frame_output_dir(project_file)
     start, end = get_scene_frames(project_file)
     managed_cmd = BlenderCmd(project_file_path=project_file,
                              frame_output_path=frame_output_dir,
@@ -124,4 +131,4 @@ if __name__ == '__main__':
                              end_frame=end,
                              animate=True)
 
-    run(managed_cmd, max_retries=args.max_retry)
+    run(managed_cmd, max_retries=args.max_retry, resume=bool(args.resume_render_dir))
