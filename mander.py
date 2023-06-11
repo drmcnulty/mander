@@ -61,10 +61,17 @@ def run(blender_cmd: BlenderCmd,
             and num_retries < max_retries:
         try:
             logging.debug(f"Blender Command: {' '.join(blender_cmd.command_line)}")
-            completed_proc = subprocess.run(blender_cmd.command_line, check=True, capture_output=True)
-            exit_code = completed_proc.returncode
+            proc = subprocess.Popen(blender_cmd.command_line, stdout=subprocess.PIPE)
+            exit_code = proc.poll()
+            while True:
+                stdout = proc.stdout.readline()
+                if stdout == b'' and exit_code is not None:
+                    break
+                if stdout:
+                    print(stdout.decode().strip())
+                exit_code = proc.poll()
             frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
-            report_success(completed_proc, blender_cmd)
+            report_success(proc, blender_cmd)
 
         except subprocess.CalledProcessError as e:
             num_retries += 1
@@ -78,8 +85,8 @@ def run(blender_cmd: BlenderCmd,
 
 def report_success(completed_proc, blender_cmd: BlenderCmd):
     # print(completed_proc.stdout.decode())
-    print(f"Frames Rendered:{len(get_frame_numbers_in_dir(blender_cmd.frame_output_path))}")
-    print("Process completed with returncode: " + str(completed_proc.returncode))
+    logging.info(f"Frames Rendered:{len(get_frame_numbers_in_dir(blender_cmd.frame_output_path))}")
+    logging.info("Manager completed with returncode: " + str(completed_proc.returncode))
 
 
 def get_scene_frames(project_path) -> (int, int):
