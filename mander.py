@@ -51,7 +51,8 @@ def run(blender_cmd: BlenderCmd,
     exit_code, num_retries = None, 0
     if resume:
         frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
-        blender_cmd.start_frame = max(frames_rendered) + 1
+        last_frame = max(frames_rendered) if frames_rendered else 0
+        blender_cmd.start_frame = last_frame + 1
     else:
         frames_rendered = []
 
@@ -68,7 +69,7 @@ def run(blender_cmd: BlenderCmd,
         except subprocess.CalledProcessError as e:
             num_retries += 1
             frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
-            last_frame = max(frames_rendered)
+            last_frame = max(frames_rendered) if frames_rendered else 0
             logging.error(f'returncode: {e.returncode}. Failed at frame: {last_frame}. '
                           f'retrying {max_retries - num_retries} more times...:\n {e}')
             if num_retries < max_retries:
@@ -117,16 +118,18 @@ def get_frame_numbers_in_dir(directory_path: str) -> list[int]:
     return frames
 
 
-def build_frame_output_dir(project_file_path: str):
+def new_frame_output_dir(project_file_path: str):
     name = project_file_path.split("\\")[-1].split(".blend")[0]
     project_render_dir = '_'.join([name, SCRIPT_START_TIMESTAMP])
-    return '\\'.join([RENDER_OUTPUT_BASE_DIR, project_render_dir, '\\'])
+    return os.path.join(RENDER_OUTPUT_BASE_DIR, project_render_dir)
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    project_file = args.project_file
-    frame_output_dir = args.resume if args.resume else build_frame_output_dir(project_file)
+    project_file = os.path.abspath(args.project_file)
+    frame_output_dir = os.path.abspath(args.resume) \
+        if args.resume \
+        else new_frame_output_dir(project_file)
     start, end = get_scene_frames(project_file)
     managed_cmd = BlenderCmd(
         project_file_path=project_file,
