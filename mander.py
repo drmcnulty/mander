@@ -1,3 +1,4 @@
+import signal
 from dataclasses import dataclass
 import os
 import subprocess
@@ -164,6 +165,14 @@ class BlenderLineInterpreter:
             # "Time: ..." Indicates final log message for a frame. Print cached stuff.
             print(f"{self.saved_filename}: {self.render_time}")
             self.last_report_time = time.time()
+
+
+def sig_handler(*_):
+    print('Ctrl-C Received. Exiting...')
+    exit(1)
+
+
+signal.signal(signal.SIGINT, sig_handler)
 
 
 if __name__ == '__main__':
