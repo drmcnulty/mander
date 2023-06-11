@@ -61,7 +61,7 @@ def run(blender_cmd: BlenderCmd,
             and num_retries < max_retries:
         try:
             logging.debug(f"Blender Command: {' '.join(blender_cmd.command_line)}")
-            proc = subprocess.Popen(blender_cmd.command_line, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(blender_cmd.command_line, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             exit_code = proc.poll()
             while True:
                 stdout = proc.stdout.readline()
@@ -70,6 +70,7 @@ def run(blender_cmd: BlenderCmd,
                 if stdout:
                     print(stdout.decode().strip())
                 exit_code = proc.poll()
+
             frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
             report_success(proc, blender_cmd)
 
