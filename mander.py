@@ -69,9 +69,8 @@ def run(blender_cmd: BlenderCmd,
             num_retries += 1
             frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
             last_frame = max(frames_rendered)
-            print(f'ERROR. returncode: {e.returncode}. \n'
-                  f'Failed at frame: {last_frame}. \n'
-                  f'retrying {max_retries - num_retries} more times...:\n {e}')
+            logging.error(f'returncode: {e.returncode}. Failed at frame: {last_frame}. '
+                          f'retrying {max_retries - num_retries} more times...:\n {e}')
             if num_retries < max_retries:
                 blender_cmd.start_frame = last_frame + 1
 
@@ -105,7 +104,7 @@ def get_scene_frames(project_path) -> (int, int):
         return start_frame, end_frame
 
     except (subprocess.CalledProcessError, KeyError) as e:
-        print(f'MANAGER QUIT. UNABLE TO GET FRAMES ON PROJECT: {project_path} \n {e}')
+        logging.error(f'MANAGER QUIT. UNABLE TO GET FRAMES ON PROJECT: {project_path} \n {e}')
         exit(1)
 
 
