@@ -78,7 +78,7 @@ def run(blender_cmd: BlenderCmd,
             num_retries += 1
             frames_rendered = get_frame_numbers_in_dir(blender_cmd.frame_output_path)
             last_frame = max(frames_rendered) if frames_rendered else 0
-            logging.error(f'returncode: {proc.returncode}. Failed at frame: {last_frame}. '
+            logging.error(f'returncode: {proc.returncode}. Failed at frame: {last_frame + 1}. '
                           f'retrying {max_retries - num_retries} more times...')
             if num_retries < max_retries:
                 blender_cmd.start_frame = last_frame + 1
